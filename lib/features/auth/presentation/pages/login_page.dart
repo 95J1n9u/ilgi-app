@@ -71,8 +71,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Firebase 익명 로그인
-      await FirebaseAuth.instance.signInAnonymously();
+      // AuthNotifier의 익명 로그인 사용
+      final authNotifier = ref.read(authNotifierProvider.notifier);
+      await authNotifier.signInAnonymously();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,37 +129,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
-    setState(() => _isLoading = true);
+  // Google 로그인 핸들러 (임시 비활성화)
+  // Future<void> _handleGoogleLogin() async {
+  //   setState(() => _isLoading = true);
 
-    try {
-      final authNotifier = ref.read(authNotifierProvider.notifier);
-      await authNotifier.signInWithGoogle();
+  //   try {
+  //     final authNotifier = ref.read(authNotifierProvider.notifier);
+  //     await authNotifier.signInWithGoogle();
 
-      // AuthWrapper가 자동으로 처리하므로 수동 라우팅 제거
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google 로그인 성공!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google 로그인 실패: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
+  //     // AuthWrapper가 자동으로 처리하므로 수동 라우팅 제거
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Google 로그인 성공!'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Google 로그인 실패: ${e.toString()}'),
+  //           backgroundColor: Theme.of(context).colorScheme.error,
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _isLoading = false);
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -290,15 +292,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 16),
 
-                  // Google 로그인 버튼
-                  CustomButton(
-                    text: 'Google로 로그인',
-                    onPressed: _handleGoogleLogin,
-                    type: ButtonType.outline,
-                    size: ButtonSize.large,
-                    width: double.infinity,
-                    icon: Icons.g_mobiledata,
-                  ),
+                  // Google 로그인 버튼 (임시 비활성화)
+                  // CustomButton(
+                  //   text: 'Google로 로그인',
+                  //   onPressed: _handleGoogleLogin,
+                  //   type: ButtonType.outline,
+                  //   size: ButtonSize.large,
+                  //   width: double.infinity,
+                  //   icon: Icons.g_mobiledata,
+                  // ),
 
                   const SizedBox(height: 16),
 
@@ -336,12 +338,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // 임시로 비활성화
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('회원가입 기능은 곧 추가될 예정입니다.'),
-                            ),
-                          );
+                          // 회원가입 페이지로 이동
+                          Navigator.of(context).pushNamed('/register');
                         },
                         child: const Text('회원가입'),
                       ),

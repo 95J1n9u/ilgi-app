@@ -43,9 +43,9 @@ class UserModel {
       'gender': gender,
       'profileImageUrl': profileImageUrl,
       'bio': bio,
-      'interests': interests,
+      'interests': List<dynamic>.from(interests),
       'personalityData': personalityData,
-      'settings': settings ?? _defaultSettings,
+      'settings': settings ?? Map<String, dynamic>.from(_defaultSettings),
       'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -62,9 +62,9 @@ class UserModel {
       'gender': gender,
       'profileImageUrl': profileImageUrl,
       'bio': bio,
-      'interests': interests,
+      'interests': List<dynamic>.from(interests),
       'personalityData': personalityData,
-      'settings': settings ?? _defaultSettings,
+      'settings': settings ?? Map<String, dynamic>.from(_defaultSettings),
       'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -138,7 +138,7 @@ class UserModel {
   }
 
   // 기본 설정
-  static const Map<String, dynamic> _defaultSettings = {
+  static final Map<String, dynamic> _defaultSettings = {
     'notifications': {
       'matches': true,
       'messages': true,

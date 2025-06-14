@@ -94,11 +94,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       );
 
       if (mounted) {
-        // 이메일 인증 안내 페이지로 이동
-        Navigator.of(context).pushReplacementNamed(
-          AppRoutes.emailVerification,
-          arguments: _emailController.text.trim(),
+        // 성공 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('회원가입 성공! 이메일 인증을 확인해주세요.'),
+            backgroundColor: Colors.green,
+          ),
         );
+        
+        // 로그인 페이지로 되돌아가기
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {

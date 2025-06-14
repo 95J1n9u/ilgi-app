@@ -1,20 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_service.dart';
 import 'storage_service.dart';
 import '../models/user_model.dart';
-import '../models/api/auth_models.dart';
+import '../models/api/auth_models.dart' hide UserInfo;
+import '../models/api/auth_models.dart' as AuthModels;
 import '../errors/auth_exceptions.dart';
 import '../network/api_client.dart';
 import '../constants/storage_keys.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseService.auth;
-  final FirebaseFirestore _firestore = FirebaseService.firestore;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // 직접 Firebase 인스턴스 사용 (더 안전)
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // 현재 사용자
   User? get currentUser => _auth.currentUser;
@@ -23,7 +22,7 @@ class AuthService {
   // 인증 상태 스트림
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // 이메일 회원가입
+  // 이메일 회원가입 (단순화된 버전)
   Future<UserCredential> signUpWithEmail({
     required String email,
     required String password,
@@ -32,106 +31,102 @@ class AuthService {
     required String gender,
   }) async {
     try {
-      // Firebase Auth 회원가입
+      print('🔄 Firebase Auth 회원가입 시작: $email');
+      
+      // 단순한 Firebase Auth 회원가입
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      print('✅ Firebase Auth 성공: ${credential.user?.uid}');
+
       if (credential.user != null) {
-        // 사용자 프로필 생성
-        await _createUserProfile(
-          userId: credential.user!.uid,
-          email: email,
-          name: name,
-          birthDate: birthDate,
-          gender: gender,
-        );
+        try {
+          // 간단한 프로필 저장 시도
+          await _firestore.collection('users').doc(credential.user!.uid).set({
+            'email': email,
+            'name': name,
+            'birthDate': birthDate.toIso8601String(),
+            'gender': gender,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          print('✅ 프로필 저장 성공');
+        } catch (e) {
+          print('⚠️ 프로필 저장 실패 (무시): $e');
+          // 프로필 저장 실패해도 계속 진행
+        }
 
         // 이메일 인증 전송
-        await credential.user!.sendEmailVerification();
+        try {
+          await credential.user!.sendEmailVerification();
+          print('✅ 이메일 인증 전송 완료');
+        } catch (e) {
+          print('⚠️ 이메일 인증 전송 실패 (무시): $e');
+        }
       }
 
       return credential;
     } on FirebaseAuthException catch (e) {
+      print('❌ Firebase Auth 오류: ${e.code} - ${e.message}');
       throw AuthException.fromFirebaseException(e);
     } catch (e) {
+      print('❌ 일반 오류: $e');
       throw AuthException('회원가입 중 오류가 발생했습니다: $e');
     }
   }
 
-  // 이메일 로그인
+  // 이메일 로그인 (단순화된 버전)
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
   }) async {
     try {
+      print('🔄 Firebase Auth 로그인 시작: $email');
+      
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // FCM 토큰 업데이트
-      await _updateFCMToken();
-
+      print('✅ Firebase Auth 로그인 성공: ${credential.user?.uid}');
       return credential;
     } on FirebaseAuthException catch (e) {
+      print('❌ Firebase Auth 로그인 오류: ${e.code} - ${e.message}');
       throw AuthException.fromFirebaseException(e);
     } catch (e) {
+      print('❌ 로그인 일반 오류: $e');
       throw AuthException('로그인 중 오류가 발생했습니다: $e');
     }
   }
 
-  // Google 로그인
-  Future<UserCredential?> signInWithGoogle() async {
+  // 익명 로그인 (단순화된 버전)
+  Future<UserCredential?> signInAnonymously() async {
     try {
-      // Google 로그인 트리거
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      if (googleUser == null) {
-        return null; // 사용자가 로그인 취소
-      }
-
-      // Google Auth 세부정보 가져오기
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
-
-      // Firebase 인증 자격증명 생성
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Firebase로 로그인
-      final userCredential = await _auth.signInWithCredential(credential);
-
-      // 새 사용자인 경우 프로필 생성
-      if (userCredential.additionalUserInfo?.isNewUser == true) {
-        await _createUserProfile(
-          userId: userCredential.user!.uid,
-          email: userCredential.user!.email!,
-          name: userCredential.user!.displayName ?? '사용자',
-          profileImageUrl: userCredential.user!.photoURL,
-        );
-      }
-
-      // FCM 토큰 업데이트
-      await _updateFCMToken();
-
-      return userCredential;
+      print('🔄 익명 로그인 시작');
+      
+      final credential = await _auth.signInAnonymously();
+      
+      print('✅ 익명 로그인 성공: ${credential.user?.uid}');
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      print('❌ 익명 로그인 오류: ${e.code} - ${e.message}');
+      throw AuthException.fromFirebaseException(e);
     } catch (e) {
-      throw AuthException('Google 로그인 중 오류가 발생했습니다: $e');
+      print('❌ 익명 로그인 일반 오류: $e');
+      throw AuthException('익명 로그인 실패: ${e.toString()}');
     }
   }
 
-  // 로그아웃
+  // 로그아웃 (단순화된 버전)
   Future<void> signOut() async {
     try {
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
+      print('🔄 로그아웃 시작');
+      await _auth.signOut();
+      print('✅ 로그아웃 완료');
     } catch (e) {
+      print('❌ 로그아웃 오류: $e');
       throw AuthException('로그아웃 중 오류가 발생했습니다: $e');
     }
   }
@@ -144,48 +139,6 @@ class AuthService {
       throw AuthException.fromFirebaseException(e);
     } catch (e) {
       throw AuthException('비밀번호 재설정 이메일 전송 실패: $e');
-    }
-  }
-
-  // 사용자 프로필 생성
-  Future<void> _createUserProfile({
-    required String userId,
-    required String email,
-    required String name,
-    DateTime? birthDate,
-    String? gender,
-    String? profileImageUrl,
-  }) async {
-    final userModel = UserModel(
-      id: userId,
-      email: email,
-      name: name,
-      birthDate: birthDate,
-      gender: gender,
-      profileImageUrl: profileImageUrl,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .set(userModel.toFirestore());
-  }
-
-  // FCM 토큰 업데이트
-  Future<void> _updateFCMToken() async {
-    if (currentUserId != null) {
-      final fcmToken = await FirebaseService.getFCMToken();
-      if (fcmToken != null) {
-        await _firestore
-            .collection('users')
-            .doc(currentUserId)
-            .update({
-          'fcmToken': fcmToken,
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-      }
     }
   }
 
@@ -202,14 +155,13 @@ class AuthService {
     }
   }
 
-  // ========== API 연동 메서드들 ==========
+  // ========== API 연동 메서드들 (기존 유지) ==========
 
   static AuthService? _instance;
   factory AuthService() => _instance ??= AuthService._internal();
   AuthService._internal();
 
   final ApiClient _apiClient = ApiClient();
-  final StorageService _storageService = StorageService();
 
   /// Firebase 토큰을 백엔드로 전송하여 JWT 토큰 발급
   Future<TokenVerificationResponse?> verifyFirebaseToken() async {
@@ -224,8 +176,8 @@ class AuthService {
       final response = await _apiClient.authApi.verifyToken('Bearer $idToken');
       
       // JWT 토큰 저장
-      await _storageService.saveString(StorageKeys.accessToken, response.accessToken);
-      await _storageService.saveString(StorageKeys.tokenType, response.tokenType);
+      await StorageService.setString(StorageKeys.accessToken, response.accessToken);
+      await StorageService.setString(StorageKeys.tokenType, response.tokenType);
       
       return response;
     } catch (e) {
@@ -235,7 +187,7 @@ class AuthService {
 
   /// 저장된 액세스 토큰 가져오기
   Future<String?> getAccessToken() async {
-    return await _storageService.getString(StorageKeys.accessToken);
+    return StorageService.getString(StorageKeys.accessToken);
   }
 
   /// 토큰 갱신
@@ -247,8 +199,8 @@ class AuthService {
       final response = await _apiClient.authApi.refreshToken('Bearer $currentToken');
       
       // 새 토큰 저장
-      await _storageService.saveString(StorageKeys.accessToken, response.accessToken);
-      await _storageService.saveString(StorageKeys.tokenType, response.tokenType);
+      await StorageService.setString(StorageKeys.accessToken, response.accessToken);
+      await StorageService.setString(StorageKeys.tokenType, response.tokenType);
       
       return true;
     } catch (e) {
@@ -257,7 +209,7 @@ class AuthService {
   }
 
   /// 백엔드에서 현재 사용자 정보 조회
-  Future<UserInfo?> getCurrentUserFromApi() async {
+  Future<AuthModels.UserInfo?> getCurrentUserFromApi() async {
     try {
       final token = await getAccessToken();
       if (token == null) return null;
@@ -295,8 +247,8 @@ class AuthService {
       }
 
       // 로컬 토큰 삭제
-      await _storageService.remove(StorageKeys.accessToken);
-      await _storageService.remove(StorageKeys.tokenType);
+      await StorageService.remove(StorageKeys.accessToken);
+      await StorageService.remove(StorageKeys.tokenType);
       
       // Firebase 로그아웃
       await signOut();

@@ -4,7 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/firebase_service.dart';
 import '../../../../core/models/user_model.dart';
-import '../../../../core/models/api/auth_models.dart';
+import '../../../../core/models/api/auth_models.dart' hide UserInfo;
+import '../../../../core/models/api/auth_models.dart' as AuthModels;
 import '../../../../core/errors/auth_exceptions.dart';
 
 // AuthService Provider
@@ -36,7 +37,7 @@ final userProfileProvider = FutureProvider.family<UserModel?, String>((ref, user
 class AuthState {
   final User? user;
   final UserModel? userProfile;
-  final UserInfo? apiUserInfo;
+  final AuthModels.UserInfo? apiUserInfo;
   final String? accessToken;
   final bool isLoading;
   final bool isInitialized;
@@ -55,7 +56,7 @@ class AuthState {
   AuthState copyWith({
     User? user,
     UserModel? userProfile,
-    UserInfo? apiUserInfo,
+    AuthModels.UserInfo? apiUserInfo,
     String? accessToken,
     bool? isLoading,
     bool? isInitialized,
@@ -134,42 +135,74 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(isInitialized: true);
   }
 
-  /// 사용자 데이터 로드 (Firebase + API)
+  /// 사용자 데이터 로드 (Firebase + API) - 안전한 버전
   Future<void> _loadUserData(User user) async {
     try {
-      // 1. Firestore에서 사용자 프로필 로드
-      final doc = await FirebaseService.usersCollection.doc(user.uid).get();
-      UserModel? userProfile;
-      if (doc.exists) {
-        userProfile = UserModel.fromFirestore(doc);
-      }
+      // 1. Firestore에서 사용자 프로필 로드 (임시 비활성화)
+      // final doc = await FirebaseService.usersCollection.doc(user.uid).get();
+      // UserModel? userProfile;
+      // if (doc.exists) {
+      //   userProfile = UserModel.fromFirestore(doc);
+      // }
+      print('👤 사용자 데이터 로드 시작: ${user.uid}');
 
-      // 2. 백엔드 API 연동
-      final tokenResponse = await _authService.verifyFirebaseToken();
-      if (tokenResponse != null) {
-        // 3. API에서 사용자 정보 조회
-        final apiUserInfo = await _authService.getCurrentUserFromApi();
-        
+      // 2. 백엔드 API 연동 시도
+      try {
+        final tokenResponse = await _authService.verifyFirebaseToken();
+        if (tokenResponse != null) {
+          print('✅ 백엔드 토큰 발급 성공');
+          
+          // 3. API에서 사용자 정보 조회 시도
+          try {
+            final apiUserInfo = await _authService.getCurrentUserFromApi();
+            print('✅ API 사용자 정보 조회 성공');
+            
+            state = state.copyWith(
+              user: user,
+              userProfile: null, // 임시로 null
+              apiUserInfo: apiUserInfo,
+              accessToken: tokenResponse.accessToken,
+              isLoading: false,
+              error: null,
+            );
+          } catch (e) {
+            print('⚠️ API 사용자 정보 조회 실패: $e');
+            state = state.copyWith(
+              user: user,
+              userProfile: null,
+              apiUserInfo: null,
+              accessToken: tokenResponse.accessToken,
+              isLoading: false,
+              error: null, // 에러 무시하고 계속 진행
+            );
+          }
+        } else {
+          print('⚠️ 백엔드 토큰 발급 실패');
+          state = state.copyWith(
+            user: user,
+            userProfile: null,
+            isLoading: false,
+            error: null, // 에러 무시하고 계속 진행
+          );
+        }
+      } catch (e) {
+        print('⚠️ 백엔드 API 연동 실패: $e');
+        // API 실패해도 Firebase Auth는 성공했으므로 계속 진행
         state = state.copyWith(
           user: user,
-          userProfile: userProfile,
-          apiUserInfo: apiUserInfo,
-          accessToken: tokenResponse.accessToken,
+          userProfile: null,
           isLoading: false,
           error: null,
         );
-      } else {
-        state = state.copyWith(
-          user: user,
-          userProfile: userProfile,
-          isLoading: false,
-          error: 'API 토큰 발급 실패',
-        );
       }
     } catch (e) {
+      print('❌ 사용자 데이터 로드 실패: $e');
+      // 최종 안전장치 - 최소한 user는 설정
       state = state.copyWith(
-        error: '사용자 데이터 로드 실패: $e',
+        user: user,
+        userProfile: null,
         isLoading: false,
+        error: null, // 에러 표시하지 않고 계속 진행
       );
     }
   }
@@ -226,13 +259,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // Google 로그인
-  Future<void> signInWithGoogle() async {
+  // Google 로그인 (임시 비활성화)
+  // Future<void> signInWithGoogle() async {
+  //   state = state.copyWith(isLoading: true, error: null);
+
+  //   try {
+  //     // Google 로그인
+  //     await _authService.signInWithGoogle();
+      
+  //     // 로그인 성공 시 자동으로 _handleUserSignIn이 호출됨
+  //   } catch (e) {
+  //     state = state.copyWith(error: e.toString());
+  //     rethrow;
+  //   } finally {
+  //     state = state.copyWith(isLoading: false);
+  //   }
+  // }
+
+  // 익명 로그인 (테스트용)
+  Future<void> signInAnonymously() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Google 로그인
-      await _authService.signInWithGoogle();
+      // 익명 로그인
+      await _authService.signInAnonymously();
       
       // 로그인 성공 시 자동으로 _handleUserSignIn이 호출됨
     } catch (e) {

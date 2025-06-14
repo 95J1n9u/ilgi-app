@@ -4,8 +4,11 @@ class DiaryModel {
   final String id;
   final String userId;
   final String content;
+  final String? title;
   final List<String> emotions;
+  final String? mood;
   final String? weather;
+  final String? location;
   final List<String> activities;
   final bool isPrivate;
   final String analysisStatus; // 'pending', 'processing', 'completed', 'failed'
@@ -17,8 +20,11 @@ class DiaryModel {
     required this.id,
     required this.userId,
     required this.content,
+    this.title,
     this.emotions = const [],
+    this.mood,
     this.weather,
+    this.location,
     this.activities = const [],
     this.isPrivate = false,
     this.analysisStatus = 'pending',
@@ -33,8 +39,11 @@ class DiaryModel {
       'id': id,
       'userId': userId,
       'content': content,
+      'title': title,
       'emotions': emotions,
+      'mood': mood,
       'weather': weather,
+      'location': location,
       'activities': activities,
       'isPrivate': isPrivate,
       'analysisStatus': analysisStatus,
@@ -49,8 +58,11 @@ class DiaryModel {
     return {
       'userId': userId,
       'content': content,
+      'title': title,
       'emotions': emotions,
+      'mood': mood,
       'weather': weather,
+      'location': location,
       'activities': activities,
       'isPrivate': isPrivate,
       'analysisStatus': analysisStatus,
@@ -66,8 +78,11 @@ class DiaryModel {
       id: json['id'] as String,
       userId: json['userId'] as String,
       content: json['content'] as String,
+      title: json['title'] as String?,
       emotions: List<String>.from(json['emotions'] ?? []),
+      mood: json['mood'] as String?,
       weather: json['weather'] as String?,
+      location: json['location'] as String?,
       activities: List<String>.from(json['activities'] ?? []),
       isPrivate: json['isPrivate'] as bool? ?? false,
       analysisStatus: json['analysisStatus'] as String? ?? 'pending',
@@ -88,8 +103,11 @@ class DiaryModel {
     String? id,
     String? userId,
     String? content,
+    String? title,
     List<String>? emotions,
+    String? mood,
     String? weather,
+    String? location,
     List<String>? activities,
     bool? isPrivate,
     String? analysisStatus,
@@ -101,8 +119,11 @@ class DiaryModel {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       content: content ?? this.content,
+      title: title ?? this.title,
       emotions: emotions ?? this.emotions,
+      mood: mood ?? this.mood,
       weather: weather ?? this.weather,
+      location: location ?? this.location,
       activities: activities ?? this.activities,
       isPrivate: isPrivate ?? this.isPrivate,
       analysisStatus: analysisStatus ?? this.analysisStatus,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
 import '../features/auth/presentation/pages/login_page.dart';
@@ -18,6 +18,17 @@ class AIMatchingApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko', 'KR'),
+        Locale('en', 'US'),
+      ],
+      onGenerateRoute: AppRoutes.generateRoute,
+      initialRoute: '/',
       home: const AuthWrapper(),
     );
   }

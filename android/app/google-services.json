@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "875255124935",
+    "project_id": "ai-diary-matching",
+    "storage_bucket": "ai-diary-matching.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875255124935:android:c8ace006a39e56fe1dffe2",
+        "android_client_info": {
+          "package_name": "com.example.ai_diary_matching"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "875255124935-945o77bfkcouucse75anfb92qpqg6b91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsNHiUPG-qWFs9NjEQ41HuUSd0hq771Ws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "875255124935-945o77bfkcouucse75anfb92qpqg6b91.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "875255124935-a1t8kkkcbl4g3od3kl3mbg8oaaiu047g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.aiDiaryMatching"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

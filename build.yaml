@@ -1,0 +1,33 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          # JSON 직렬화 옵션
+          explicit_to_json: true
+          field_rename: snake_case
+          include_if_null: false
+          any_map: false
+          checked: true
+          create_factory: true
+          create_to_json: true
+          disallow_unrecognized_keys: false
+          generic_argument_factories: false
+          ignore_unannotated: false
+      
+      retrofit_generator:
+        options:
+          # Retrofit 생성 옵션
+          parser_type: both
+          wrap_with_map: false
+          
+  # 특정 파일 타겟팅
+  api_models:
+    sources:
+      - lib/core/models/api/**
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true
+          field_rename: snake_case
+          include_if_null: false
